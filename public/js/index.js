@@ -13,9 +13,9 @@ socket.on('disconnect', function () {
 // });
 
 
-socket.emit('createMessage', {
-  from: 'Frank',
-  text: 'Hi',
-}, function (data) {
-  console.log('Got it', data);
-});
+// socket.emit('createMessage', {
+//   from: 'Frank',
+//   text: 'Hi',
+// }, function (data) {
+//   console.log('Got it', data);
+// });
