@@ -12,7 +12,13 @@ class LikeButton extends React.Component {
 
     socket.on("newMessage", data => this.setState(prevState => {
       return {
-        messages: [...prevState.messages, {from:data.from, text:data.text}]
+        messages: [...prevState.messages, { from: data.from, text: data.text }]
+      }
+    }));
+
+    socket.on("newLocationMessage", data => this.setState(prevState => {
+      return {
+        messages: [...prevState.messages, { from: data.from, text: data.text }]
       }
     }));
 
@@ -31,6 +37,21 @@ class LikeButton extends React.Component {
     }, function () {
 
     })
+  }
+
+  handleSendLocationClick = (e) => {
+    if (!navigator.geolocation) {
+      return alert('Geolocation not supported by browser.');
+    }
+
+    navigator.geolocation.getCurrentPosition((position) => {
+      socket.emit('createLocationMessage', {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      });
+    }, () => {
+      alert('Unable to fetch location.')
+    })
 
   }
 
@@ -38,24 +59,29 @@ class LikeButton extends React.Component {
 
     return (
       <div>
-        <input
-          name="message"
-          type="text"
-          placeholder="Message"
-          value={this.state.text}
-          onChange={this.handleTextChange}
-        />
-        <button
-          onClick={this.handleSendClick}
-        >
-          Send
-        </button>
+        <form id="message-form">
+          <input
+            name="message"
+            type="text"
+            placeholder="Message"
+            value={this.state.text}
+            onChange={this.handleTextChange}
+          />
+          <button
+            onClick={this.handleSendClick}
+          >
+            Send
+          </button>
+        </form>
+
 
         <ul>
           {this.state.messages.map(({ from, text }, i) =>
             <li key={i}>{from} – {text}</li>
           )}
         </ul>
+
+        <button id="send-location" onClick={this.handleSendLocationClick}>Send Location</button>
 
       </div>
     );
