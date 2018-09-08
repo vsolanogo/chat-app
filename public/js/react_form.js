@@ -10,18 +10,22 @@ class LikeButton extends React.Component {
   componentDidMount() {
     // socket.on("newMessage", data => this.setState({ messages: `${data.from} - ${data.text} ` }));
 
-    socket.on("newMessage", data => this.setState(prevState => {
-      return {
-        messages: [...prevState.messages, { from: data.from, text: data.text }]
-      }
-    }));
+    // socket.on("newMessage", data => this.setState(prevState => {
+    //   return {
+    //     messages: [...prevState.messages, { from: data.from, text: data.text }]
+    //   }
+    // }));
+
+    socket.on("newMessage", data => this.setState({
+      messages: this.state.messages.concat({ from: data.from, text: data.text })
+    }));    
 
     socket.on("newLocationMessage", data => this.setState(prevState => {
       return {
-        messages: [...prevState.messages, { from: data.from, text: data.text }]
+        messages: [...prevState.messages, { from: data.from, url: data.url, urlText: "My current location" }]
       }
     }));
-
+    
   }
 
   handleTextChange = (e) => {
@@ -76,11 +80,11 @@ class LikeButton extends React.Component {
 
 
         <ul>
-          {this.state.messages.map(({ from, text }, i) =>
-            <li key={i}>{from} – {text}</li>
+          {this.state.messages.map(({ from, text, url,urlText }, i) =>
+            <li key={i}>{from}: {text}<a target="_blank" href={url}>{urlText}</a></li>
           )}
-        </ul>
-
+        </ul> 
+        
         <button id="send-location" onClick={this.handleSendLocationClick}>Send Location</button>
 
       </div>
