@@ -24,19 +24,13 @@ class ChatRoom extends React.Component {
     chatLines: [
       {
         user: "user",
-        text: "text1 text1text1text1 text1 text1 text1text1 text1text1 text1text1text1 text1",
-      },
+        text: "text1 ",
+        id: uuid.v4(),
+      }, 
       {
         user: "user",
-        text: "text2",
-      },
-      {
-        user: "user",
-        text: "text3",
-      },
-      {
-        user: "user",
-        text: "text4",
+        text: "text1 ",
+        id: uuid.v4(),
       },
     ],
     smiles: new Array(),
@@ -91,7 +85,9 @@ class ChatRoom extends React.Component {
 
   createImageObj = (fileName, label) => {
     return Object.assign({}, {
-      fileName, label
+      fileName, 
+      label, 
+      id: uuid.v4(),
     })
   }
 
@@ -145,7 +141,9 @@ class ChatContent extends React.Component {
 
     const chatLines = this.props.chatLines.map(cl =>
       <ChatLine
+        key={cl.id}
         text={cl.text}
+        key={uuid.v4()}
       />
     )
 
@@ -231,8 +229,6 @@ class InputBlock extends React.Component {
 
   renewMessage = (e) => {
     this.setState({ message: e.target.value })
-
-    console.log(e.target.value)//
   }
 
   render() {
@@ -286,7 +282,6 @@ class InputBlock extends React.Component {
     );
   }
 }
-
 
 class TextAreaBox extends React.Component {
   state = {
@@ -398,18 +393,19 @@ class EmotePickerBox extends React.Component {
       boxSizing: "border-box",
     }
 
+    const emoteBoxes = this.state.filteredSmiles.map((emoteBox) => (
+      <EmoteBox 
+        fileName={emoteBox.fileName}
+        label={emoteBox.label}
+        onEmoteClick={this.props.onEmoteClick}
+        key={emoteBox.id}
+      />
+    ))
+
     return (
       <div style={emotePickerBoxWrapperStyle}>
         <div style={emotePickerBoxStyle}>
-          {
-            this.state.filteredSmiles.map(x =>
-              <EmoteBox
-                fileName={x.fileName}
-                label={x.label}
-                onEmoteClick={this.props.onEmoteClick}
-              />
-            )
-          }
+          {emoteBoxes} 
         </div>
         <div style={smileFinderBox}>
           <TextAreaBox
