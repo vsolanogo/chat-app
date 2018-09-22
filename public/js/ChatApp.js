@@ -21,25 +21,7 @@ class ChatApp extends React.Component {
 
 class ChatRoom extends React.Component {
   state = {
-    chatLines: [
-      {
-        user: "user",
-        text: "text1 ",
-        id: uuid.v4(),
-      }, 
-      {
-        user: "user",
-        text: "text1 ",
-        id: uuid.v4(),
-      },
-    ],
-    smiles: new Array(),
-  }
-
-
-  componentDidMount() {
-    const smilesArr = new Array();
-    const smilesName = [":)", ":(", ":D", ">(", ":|", "O_o",
+    smilesNames: [":)", ":(", ":D", ">(", ":|", "O_o",
       "B)", ":O", "<3", ":/", ";)", ":P",
       ";P", "R)", "JKanStyle", "OptimizePrime", "StoneLightning", "TheRinger",
       "RedCoat", "Kappa", "JonCarnage", "MrDestructoid", "BCWarrior", "GingerPower",
@@ -72,10 +54,34 @@ class ChatRoom extends React.Component {
       "MercyWing2", "PinkMercy", "BisexualPride", "LesbianPride", "GayPride", "TransgenderPride",
       "AsexualPride", "PansexualPride", "TwitchRPG", "IntersexPride", "MaxLOL", "NonBinaryPride",
       "GenderFluidPride", "SnickersGoal", "SnickersBoom",
-    ]
+    ],
+
+    chatLines: [
+      {
+        user: "user",
+        text: "text1 LUL LUL ",
+        id: uuid.v4(),
+      },
+      {
+        user: "user",
+        text: "text1 Jebaited Jebaited Jebaited",
+        id: uuid.v4(),
+      },
+      {
+        user: "user",
+        text: "PogChamp   PogChamp PogChamp      is    ",
+        id: uuid.v4(),
+      },
+    ],
+    smiles: [],
+  }
+
+
+  componentDidMount() {
+    const smilesArr = new Array();
 
     for (let i = 0; i < 213; i++) {
-      smilesArr.push(this.createImageObj(`${i + 1}.png`, smilesName[i]));
+      smilesArr.push(this.createImageObj(`${i + 1}.png`, this.state.smilesNames[i]));
     }
 
     this.setState({
@@ -84,11 +90,11 @@ class ChatRoom extends React.Component {
   }
 
   createImageObj = (fileName, label) => {
-    return Object.assign({}, {
-      fileName, 
-      label, 
+    return {
+      fileName,
+      label,
       id: uuid.v4(),
-    })
+    }
   }
 
   handleSendMessage = (p) => {
@@ -117,12 +123,12 @@ class ChatRoom extends React.Component {
         <ChatContent
           chatLines={this.state.chatLines}
           smiles={this.state.smiles}
+          smilesNames={this.state.smilesNames}
         />
         <InputBlock
           onChatClick={this.handleSendMessage}
           smiles={this.state.smiles}
         />
-
       </div>
     );
   }
@@ -139,11 +145,14 @@ class ChatContent extends React.Component {
       borderRight: "1px solid #DAD8DE",
     }
 
+
     const chatLines = this.props.chatLines.map(cl =>
       <ChatLine
         key={cl.id}
         text={cl.text}
         key={uuid.v4()}
+        smiles={this.props.smiles}
+        smilesNames={this.props.smilesNames}
       />
     )
 
@@ -157,7 +166,16 @@ class ChatContent extends React.Component {
 
 class ChatLine extends React.Component {
   state = {
-    text: this.props.text,
+    messageAndSmiles: [],
+    splittedMessage: [],
+  }
+
+  componentDidMount() {
+    const splittedM = this.props.text.split(' ').filter(x => x.length > 0);
+
+    this.setState({
+      splittedMessage: splittedM,
+    })
   }
 
   render() {
@@ -177,11 +195,26 @@ class ChatLine extends React.Component {
       fontSize: 12,
     }
 
+
+    const message = this.state.splittedMessage.map(x => {
+      if (this.props.smilesNames.includes(x)) {
+
+        const fileName = this.props.smiles.find(obj => obj.label.includes(x))
+
+        return <img src={`./emotes/${fileName.fileName}`} />
+      }
+      else {
+        return <span style={textStyle}>{x} </span>
+      }
+
+    }); 
+
     return (
       <div style={chatLineStyle}>
-        <span style={textStyle}>{this.props.text}</span>
+        {message}
       </div>
     );
+ 
   }
 }
 
@@ -194,11 +227,11 @@ class InputBlock extends React.Component {
 
   handleEmoteClick = (label) => {
     let space = "";
-    
-    if(this.state.message.length && 
-      this.state.message[this.state.message.length-1]!==" "){
-        space =" ";
-      }
+
+    if (this.state.message.length &&
+      this.state.message[this.state.message.length - 1] !== " ") {
+      space = " ";
+    }
 
     this.setState(prevState => {
       return {
@@ -249,6 +282,7 @@ class InputBlock extends React.Component {
       position: "relative",
     }
 
+
     return (
       <div style={inputBlockStyle}>
         <div style={inputWrapper}>
@@ -265,17 +299,13 @@ class InputBlock extends React.Component {
           <ChatButton
             onChatClick={this.handleChatClick}
           />
+
           {this.state.displayEmotePicker &&
             <EmotePickerBox
               smiles={this.props.smiles}
               onEmoteClick={this.handleEmoteClick}
             />
           }
-
-          {/* <EmotePickerBox
-            display={this.state.displayEmotePicker}
-            smiles={this.props.smiles}
-          /> */}
 
         </div>
       </div>
@@ -366,7 +396,6 @@ class EmotePickerBox extends React.Component {
       border: "1px solid #DAD8DE",
       boxShadow: "0 2px 4px -1px rgba(0,0,0,.1)",
       display: "flex",
-      // zIndex: this.props.display ? 1 : -1,
       flexDirection: "column",
     }
 
@@ -375,7 +404,6 @@ class EmotePickerBox extends React.Component {
       maxHeight: 305,
       overflow: "scroll",
       background: "white",
-      // gridTemplateColumns: "repeat(6, 1fr)",
       justifyContent: "center",
       alignItems: "center",
       flexWrap: "wrap",
@@ -394,7 +422,7 @@ class EmotePickerBox extends React.Component {
     }
 
     const emoteBoxes = this.state.filteredSmiles.map((emoteBox) => (
-      <EmoteBox 
+      <EmoteBox
         fileName={emoteBox.fileName}
         label={emoteBox.label}
         onEmoteClick={this.props.onEmoteClick}
@@ -405,7 +433,7 @@ class EmotePickerBox extends React.Component {
     return (
       <div style={emotePickerBoxWrapperStyle}>
         <div style={emotePickerBoxStyle}>
-          {emoteBoxes} 
+          {emoteBoxes}
         </div>
         <div style={smileFinderBox}>
           <TextAreaBox
@@ -420,7 +448,7 @@ class EmotePickerBox extends React.Component {
   }
 }
 
-class EmoteBox extends React.Component { //emotebuttonbox
+class EmoteBox extends React.Component {
   state = {
     hover: false,
   }
@@ -429,7 +457,7 @@ class EmoteBox extends React.Component { //emotebuttonbox
     this.setState({ hover: !this.state.hover })
   }
 
-  handleClick = () =>{
+  handleClick = () => {
     this.props.onEmoteClick(this.props.label)
   }
 
@@ -439,8 +467,8 @@ class EmoteBox extends React.Component { //emotebuttonbox
 
     const emoteBoxStyle = {
       position: "relative",
-      height: "38px",
-      width: "38px",
+      height: "40px",
+      width: "40px",
       border: 0,
       cursor: "pointer",
       padding: 0,
