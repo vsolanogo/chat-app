@@ -1,5 +1,7 @@
 const e = React.createElement;
 
+
+
 class ChatApp extends React.Component {
 
   render() {
@@ -16,6 +18,92 @@ class ChatApp extends React.Component {
       </div>
     );
   }
+}
+
+
+
+class ChatRoom2 extends React.Component {
+
+  state = {
+    text: '',
+    messages: [],
+  }
+
+  componentDidMount() {
+    socket.on("newMessage", data => this.setState({
+      messages: this.state.messages.concat({ from: data.from, text: data.text })
+    }));
+
+    socket.on("newLocationMessage", data => this.setState(prevState => {
+      return {
+        messages: [...prevState.messages, { from: data.from, url: data.url, urlText: "My current location" }]
+      }
+    }));
+
+  }
+
+  handleTextChange = (e) => {
+    this.setState({ text: e.target.value });
+  }
+
+  handleSendClick = (e) => {
+    e.preventDefault();
+
+    socket.emit('createMessage', {
+      from: 'User',
+      text: this.state.text,
+    }, function () {
+
+    })
+  }
+
+  handleSendLocationClick = (e) => {
+    if (!navigator.geolocation) {
+      return alert('Geolocation not supported by browser.');
+    }
+
+    navigator.geolocation.getCurrentPosition((position) => {
+      socket.emit('createLocationMessage', {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      });
+    }, () => {
+      alert('Unable to fetch location.')
+    })
+
+  }
+
+  render() {
+
+    return (
+      <div>
+        <form id="message-form">
+          <input
+            name="message"
+            type="text"
+            placeholder="Message"
+            value={this.state.text}
+            onChange={this.handleTextChange}
+          />
+          <button
+            onClick={this.handleSendClick}
+          >
+            Send
+          </button>
+        </form>
+
+        <ul>
+          {this.state.messages.map(({ from, text, url, urlText }, i) =>
+            <li key={i}>{from}: {text}<a target="_blank" href={url}>{urlText}</a></li>
+          )}
+        </ul>
+
+        <button id="send-location" onClick={this.handleSendLocationClick}>Send Location</button>
+
+      </div>
+    );
+  }
+
 }
 
 
@@ -58,35 +146,31 @@ class ChatRoom extends React.Component {
 
     chatLines: [
       {
-        user: "user",
-        text: "text1 LUL LUL ",
-        id: uuid.v4(),
-      },
-      {
-        user: "user",
-        text: "text1 Jebaited Jebaited Jebaited",
-        id: uuid.v4(),
-      },
-      {
-        user: "user",
-        text: "PogChamp   PogChamp PogChamp      is    ",
+        user: "Browser",
+        text: "HeyGuys HeyGuys HeyGuys HeyGuys HeyGuys HeyGuys ",
         id: uuid.v4(),
       },
     ],
     smiles: [],
   }
 
-
-  componentDidMount() {
-    const smilesArr = new Array();
+  componentWillMount() {
+    const newSmiles = new Array();
 
     for (let i = 0; i < 213; i++) {
-      smilesArr.push(this.createImageObj(`${i + 1}.png`, this.state.smilesNames[i]));
+      newSmiles.push(this.createImageObj(`${i + 1}.png`, this.state.smilesNames[i]));
     }
 
     this.setState({
-      smiles: smilesArr,
+      smiles: newSmiles,
     })
+  }
+
+  componentDidMount() {
+    socket.on("newMessage", data => this.setState({
+      chatLines: this.state.chatLines.concat({ user: data.from, text: data.text, id: uuid.v4() })
+    }));
+ 
   }
 
   createImageObj = (fileName, label) => {
@@ -98,15 +182,21 @@ class ChatRoom extends React.Component {
   }
 
   handleSendMessage = (p) => {
-    this.sendNewMessage(p)
+    //this.sendNewMessage(p)
+    socket.emit('createMessage', {
+      from: 'User',
+      text: p,
+    }, function () {
+
+    })
+
   }
 
-  sendNewMessage = (p) => {
-    const l = { text: p }
-    this.setState({
-      chatLines: this.state.chatLines.concat(l)
-    })
-  }
+  // sendNewMessage = (m) => {
+  //   this.setState({
+  //     chatLines: this.state.chatLines.concat({ user: "User", text: m, id: uuid.v4() })
+  //   })
+  // }
 
   render() {
     const chatRoomStyle = {
@@ -119,7 +209,7 @@ class ChatRoom extends React.Component {
     };
 
     return (
-      <div style={chatRoomStyle}>
+      <div style={chatRoomStyle}> 
         <ChatContent
           chatLines={this.state.chatLines}
           smiles={this.state.smiles}
@@ -138,19 +228,19 @@ class ChatContent extends React.Component {
   render() {
     const chatContentStyle = {
       display: "flex",
-      flexGrow: 2,
+      flexGrow: 1,
       flexDirection: "column",
       alignItems: "flex-start",
-      overflow: "scroll",
+      overflowY: "scroll",
+      overflowX: "hidden",
       borderRight: "1px solid #DAD8DE",
     }
 
 
     const chatLines = this.props.chatLines.map(cl =>
       <ChatLine
+        messageObject={cl}
         key={cl.id}
-        text={cl.text}
-        key={uuid.v4()}
         smiles={this.props.smiles}
         smilesNames={this.props.smilesNames}
       />
@@ -171,7 +261,7 @@ class ChatLine extends React.Component {
   }
 
   componentDidMount() {
-    const splittedM = this.props.text.split(' ').filter(x => x.length > 0);
+    const splittedM = this.props.messageObject.text.split(' ').filter(x => x.length > 0);
 
     this.setState({
       splittedMessage: splittedM,
@@ -180,41 +270,40 @@ class ChatLine extends React.Component {
 
   render() {
     const chatLineStyle = {
-      display: "flex",
-      width: "100%",
-      flexShrink: 0,
       paddingLeft: 20,
       paddingTop: 5,
       paddingRight: 20,
       paddingBottom: 5,
-      boxSizing: "border-box",
     }
 
     const textStyle = {
       fontFamily: "Arial",
       fontSize: 12,
+      boxSizing: "border-box",
+      wordBreak: "break-all",
+      wordWrap: "break-word",
+      whiteSpace: "pre-wrap",
+
     }
 
 
     const message = this.state.splittedMessage.map(x => {
       if (this.props.smilesNames.includes(x)) {
-
-        const fileName = this.props.smiles.find(obj => obj.label.includes(x))
-
-        return <img src={`./emotes/${fileName.fileName}`} />
+        const imageObj = this.props.smiles.find(obj => obj.label.includes(x))
+        return <span style={textStyle}><img src={`./emotes/${imageObj.fileName}`} /><span style={textStyle}> </span></span>
       }
       else {
         return <span style={textStyle}>{x} </span>
       }
 
-    }); 
+    });
 
     return (
       <div style={chatLineStyle}>
-        {message}
+        <span style={textStyle}><b>{this.props.messageObject.user}: </b></span>{message}
       </div>
     );
- 
+
   }
 }
 
@@ -402,7 +491,8 @@ class EmotePickerBox extends React.Component {
     const emotePickerBoxStyle = {
       display: "flex",
       maxHeight: 305,
-      overflow: "scroll",
+      overflowY: "scroll",
+      overflowX: "hidden",
       background: "white",
       justifyContent: "center",
       alignItems: "center",
@@ -649,103 +739,6 @@ class ChatButton extends React.Component {
   }
 }
 
-// class InputBlock extends React.Component {
-
-// }
-
-// class ChatContent extends React.Component {
-
-// }
-
-// class EmotePicker extends React.Component {
-
-// }
-
-
-
-// class ChatRoom extends React.Component {
-
-//   state = {
-//     text: '',
-//     messages: [],
-//   }
-
-//   componentDidMount() {
-//     socket.on("newMessage", data => this.setState({
-//       messages: this.state.messages.concat({ from: data.from, text: data.text })
-//     }));
-
-//     socket.on("newLocationMessage", data => this.setState(prevState => {
-//       return {
-//         messages: [...prevState.messages, { from: data.from, url: data.url, urlText: "My current location" }]
-//       }
-//     }));
-
-//   }
-
-//   handleTextChange = (e) => {
-//     this.setState({ text: e.target.value });
-//   }
-
-//   handleSendClick = (e) => {
-//     e.preventDefault();
-
-//     socket.emit('createMessage', {
-//       from: 'User',
-//       text: this.state.text,
-//     }, function () {
-
-//     })
-//   }
-
-//   handleSendLocationClick = (e) => {
-//     if (!navigator.geolocation) {
-//       return alert('Geolocation not supported by browser.');
-//     }
-
-//     navigator.geolocation.getCurrentPosition((position) => {
-//       socket.emit('createLocationMessage', {
-//         latitude: position.coords.latitude,
-//         longitude: position.coords.longitude
-//       });
-//     }, () => {
-//       alert('Unable to fetch location.')
-//     })
-
-//   }
-
-//   render() {
-
-//     return (
-//       <div>
-//         <form id="message-form">
-//           <input
-//             name="message"
-//             type="text"
-//             placeholder="Message"
-//             value={this.state.text}
-//             onChange={this.handleTextChange}
-//           />
-//           <button
-//             onClick={this.handleSendClick}
-//           >
-//             Send
-//           </button>
-//         </form>
-
-//         <ul>
-//           {this.state.messages.map(({ from, text, url, urlText }, i) =>
-//             <li key={i}>{from}: {text}<a target="_blank" href={url}>{urlText}</a></li>
-//           )}
-//         </ul>
-
-//         <button id="send-location" onClick={this.handleSendLocationClick}>Send Location</button>
-
-//       </div>
-//     );
-//   }
-
-// }
 
 
 
