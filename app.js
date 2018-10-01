@@ -5,16 +5,16 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 const socketIO = require('socket.io');
+const io = socketIO();
+
 const {generateMessage} = require('./utils/message');
 const {generateLocationMessage} = require('./utils/message');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
-const app = express();
-// const server = http.createServer(app);
-// const io = socketIO(server);
-const io = socketIO();
+const app = express(); 
+app.io = io;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -45,7 +45,6 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-app.io = io;
 
 
 io.on('connection', (socket) =>{
@@ -69,5 +68,7 @@ io.on('connection', (socket) =>{
 		console.log('Disconnected from server');
 	  });
 }); 
+
+
 
 module.exports = app;
