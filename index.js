@@ -38,29 +38,31 @@ app.get('/api/passwords', (req, res) => {
 // match one above, send back React's index.html file.
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname+'/client/build/index.html'));
+
+	io.on('connection', (socket) =>{
+		console.log('New user connected') 
+
+		socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
+			
+		socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
+
+		socket.on('createMessage', (message, callback) => {
+			console.log('createMessage', message);
+			io.emit('newMessage', generateMessage(message.from, message.text))
+			callback('This is from the server.'); 
+		})
+	
+		socket.on('createLocationMessage', (coords) => {
+			io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude));
+		});
+
+		socket.on('disconnect', function () {
+			console.log('Disconnected from server');
+		});
+	}); 
+
 });
 
-io.on('connection', (socket) =>{
-	console.log('New user connected') 
-
-	socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
-		
-	socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
-
-	socket.on('createMessage', (message, callback) => {
-		console.log('createMessage', message);
-		io.emit('newMessage', generateMessage(message.from, message.text))
-		callback('This is from the server.'); 
-	})
- 
-	socket.on('createLocationMessage', (coords) => {
-		io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude));
-	});
-
-	socket.on('disconnect', function () {
-		console.log('Disconnected from server');
-	  });
-}); 
 
 
 
