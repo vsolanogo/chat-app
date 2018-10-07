@@ -4,7 +4,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "start": "node index.js",
+    "start": "node bin/www",
     "test": "mocha server/**/*.test.js",
     "test-watch": "nodemon --exec \"npm test\"",
     "heroku-postbuild": "cd client && npm install && npm run build"
